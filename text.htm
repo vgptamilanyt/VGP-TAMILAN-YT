@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Redeem Your Google Play Code</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#6c5ce7" />
+  <style>
+    :root{
+      --bg1:#0f1020; --bg2:#1b1c3a; --accent:#6c5ce7; --accent-2:#a29bfe;
+      --text:#f7f7fb; --muted:#c6c7d0; --card:#151631; --card2:#1b1c3a; --ok:#2ecc71;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--text); font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans";
+      background: radial-gradient(1200px 800px at 20% -10%, #2d2e63 0%, transparent 60%),
+                  radial-gradient(900px 600px at 100% 0%, #3b2b5e 0%, transparent 60%),
+                  linear-gradient(180deg, var(--bg1), var(--bg2));
+      display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .card{
+      width:min(680px, 96vw); background:linear-gradient(180deg, var(--card), var(--card2));
+      border:1px solid rgba(255,255,255,.08); border-radius:20px; padding:28px;
+      box-shadow:0 30px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    [hidden]{display:none !important;}
+    .header{
+      display:flex; align-items:center; gap:12px; margin-bottom:10px;
+    }
+    .logo{
+      width:40px;height:40px;border-radius:8px; overflow:hidden; flex:0 0 auto;
+      background:#00000011; display:grid; place-items:center;
+    }
+    .logo img{width:100%; height:100%; object-fit:cover; display:block}
+    h1{font-size:20px; margin:0;}
+    p.desc{margin:0; color:var(--muted); font-size:14px}
+    .code-wrap{
+      margin:18px 0 8px; display:flex; gap:10px; align-items:stretch;
+      background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+      border-radius:14px; padding:10px;
+    }
+    .code{
+      flex:1; display:flex; align-items:center; justify-content:center; text-align:center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:22px; letter-spacing:1.5px; padding:14px 10px; border-radius:10px;
+      background:rgba(0,0,0,.18);
+      user-select:all;
+      min-height:56px;
+    }
+    .muted{color:var(--muted)}
+    .btn{
+      appearance:none; border:none; cursor:pointer; white-space:nowrap;
+      padding:0 18px; border-radius:12px; font-weight:600; font-size:15px;
+      background:linear-gradient(180deg, var(--accent), #5a4fd4);
+      color:white; box-shadow:0 10px 24px rgba(108,92,231,.35);
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    .btn.secondary{
+      background:transparent; color:var(--text);
+      border:1px solid rgba(255,255,255,.14); box-shadow:none;
+    }
+    #claimWrap .btn{
+      width:100%; justify-content:center; padding:14px;
+      font-size:16px;
+    }
+    .row{display:flex; gap:10px; flex-wrap:wrap}
+    .tips{margin-top:14px; color:var(--muted); font-size:13px}
+    .ok{color:var(--ok); font-weight:600}
+    .toast{
+      position:fixed; left:50%; transform:translateX(-50%);
+      bottom:24px; background:rgba(20,20,24,.95); color:var(--text);
+      border:1px solid rgba(255,255,255,.12); padding:10px 14px; border-radius:12px;
+      box-shadow:0 20px 40px rgba(0,0,0,.4); opacity:0; pointer-events:none; transition:.25s ease;
+    }
+    .toast.show{opacity:1; transform:translateX(-50%) translateY(-6px)}
+    .value-badge{
+      display:inline-flex; align-items:center; gap:8px; margin:10px 0 4px;
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+      padding:8px 12px; border-radius:12px; font-weight:600;
+    }
+    .value-badge small{color:var(--muted); font-weight:500}
+    @media (max-width:420px){
+      .code{font-size:18px; letter-spacing:1.2px}
+      .btn{width:100%; justify-content:center; padding:14px}
+      .code-wrap{flex-direction:column}
+    }
+  </style>
+</head>
+<body>
+  <main class="card" role="main" aria-labelledby="title">
+    <div class="header">
+      <div class="logo" aria-hidden="true">
+        <!-- Your provided logo URL -->
+        <img src="https://www.gstatic.com/android/market_images/web/play_prism_160px_v2.png" alt="Google Play logo" referrerpolicy="no-referrer" />
+      </div>
+      <div>
+        <h1 id="title">Google Play Gift Code</h1>
+        <p class="desc">Redeem your gift code. Copy &amp; redeem.</p>
+      </div>
+    </div>
+
+    <div id="valueBadge" class="value-badge" aria-live="polite" hidden>
+      <small>Value:</small> <span id="amountText">₹0</span>
+    </div>
+
+    <div id="codeWrap" class="code-wrap" aria-live="polite">
+      <div id="codeBox" class="code muted">No code found</div>
+      <button id="copyBtn" class="btn" aria-label="Copy code" disabled>
+        <span>📋</span> Copy
+      </button>
+    </div>
+
+    <div id="claimWrap" class="code-wrap" hidden>
+      <button id="claimBtn" class="btn" type="button">🎁 Claim Voucher</button>
+    </div>
+
+    <div id="actionRow" class="row">
+      <a id="redeemLink" class="btn secondary" href="https://play.google.com/redeem" target="_blank" rel="noopener">
+        ↗ Redeem on Google Play
+      </a>
+      <button id="shareBtn" class="btn secondary" type="button">
+        🔗 Share Link
+      </button>
+    </div>
+
+    <!-- <p class="tips">
+      Example: <code class="muted">https://yourdomain.com/index.html?code=XXXX-XXXX-XXXX-XXXX&amp;amount=10</code>
+      (also works with <code>voucher</code> or <code>value</code> for the code)
+    </p> -->
+
+    <div id="toast" class="toast" role="status" aria-live="polite">Copied!</div>
+  </main>
+
+  <script>
+    // --- helpers ---
+    const qs = new URLSearchParams(window.location.search);
+    const getParam = (keys) => {
+      for (const k of keys) {
+        const v = qs.get(k);
+        if (v) return v.trim();
+      }
+      return "";
+    };
+
+    const normalizeCode = (raw) => {
+      if (!raw) return "";
+      const cleaned = raw.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+      // format as XXXX-XXXX-XXXX-XXXX when length is 16
+      if (cleaned.length === 16) {
+        return cleaned.replace(/(.{4})/g, "$1-").replace(/-$/, "");
+      }
+      return raw.toUpperCase();
+    };
+
+    const isLikelyPlayCode = (str) => /^[A-Z0-9]{4}(-?[A-Z0-9]{4}){3}$/.test(str);
+    const asHttpUrl = (value) => {
+      const trimmed = (value || "").trim();
+      if (!trimmed) return "";
+      const hasScheme = /^https?:\/\//i.test(trimmed);
+      if (!hasScheme && !trimmed.includes(".")) return "";
+      const candidate = hasScheme ? trimmed : `https://${trimmed}`;
+      try {
+        const url = new URL(candidate);
+        return ["http:", "https:"].includes(url.protocol) ? url.toString() : "";
+      } catch { return ""; }
+    };
+
+    const codeBox    = document.getElementById("codeBox");
+    const copyBtn    = document.getElementById("copyBtn");
+    const redeemLink = document.getElementById("redeemLink");
+    const shareBtn   = document.getElementById("shareBtn");
+    const toast      = document.getElementById("toast");
+    const valueBadge = document.getElementById("valueBadge");
+    const amountText = document.getElementById("amountText");
+    const codeWrap   = document.getElementById("codeWrap");
+    const claimWrap  = document.getElementById("claimWrap");
+    const claimBtn   = document.getElementById("claimBtn");
+    const actionRow  = document.getElementById("actionRow");
+
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(()=> toast.classList.remove("show"), 1600);
+    }
+
+    function setCode(newCode){
+      const code = normalizeCode(newCode);
+      if (code) {
+        codeBox.textContent = code;
+        codeBox.classList.remove("muted");
+        copyBtn.disabled = false;
+        // pass raw digits to Google Play redeem (no dashes)
+        redeemLink.href = "https://play.google.com/redeem?code=" + encodeURIComponent(code.replaceAll("-", ""));
+      } else {
+        codeBox.textContent = "No code found";
+        codeBox.classList.add("muted");
+        copyBtn.disabled = true;
+        redeemLink.href = "https://play.google.com/redeem";
+      }
+    }
+
+    async function copyText(text){
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = text; document.body.appendChild(ta);
+          ta.select(); ta.setSelectionRange(0, 99999);
+          document.execCommand("copy");
+          ta.remove();
+        }
+        showToast("Copied!");
+      } catch (e){
+        showToast("Copy failed");
+      }
+    }
+
+    function setAmount(raw){
+      // Accepts numbers like "10", "10.00" or prefixed "₹10"
+      const cleaned = (raw || "").replace(/[^\d.]/g, "");
+      const num = parseFloat(cleaned);
+      if (!isNaN(num) && num > 0) {
+        // Show without decimals if it's an integer
+        const formatted = Number.isInteger(num)
+          ? "₹" + Math.round(num).toString()
+          : new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" })
+              .format(num)
+              .replace(/\u00A0/g, ""); // remove non-breaking spaces
+        amountText.textContent = formatted.replace("INR", "₹").replace("₹ ", "₹");
+        valueBadge.hidden = false;
+      } else {
+        valueBadge.hidden = true;
+      }
+    }
+
+    // --- init from URL ---
+    const incomingCode = getParam(["code","voucher","value"]);
+    const incomingAmt  = qs.get("amount");
+    const claimUrl     = asHttpUrl(incomingCode);
+
+    if (claimUrl) {
+      codeWrap.hidden = true;
+      actionRow.hidden = true;
+      claimWrap.hidden = false;
+      claimBtn.addEventListener("click", () => {
+        window.open(claimUrl, "_blank", "noopener,noreferrer");
+      });
+    } else {
+      codeWrap.hidden = false;
+      actionRow.hidden = false;
+      claimWrap.hidden = true;
+      setCode(incomingCode);
+    }
+    setAmount(incomingAmt);
+
+    // --- events ---
+    copyBtn.addEventListener("click", () => {
+      const text = codeBox.textContent.trim();
+      if (text && text !== "No code found") copyText(text);
+    });
+
+    codeBox.addEventListener("click", () => {
+      const text = codeBox.textContent.trim();
+      if (text && text !== "No code found") copyText(text);
+    });
+
+    shareBtn.addEventListener("click", async () => {
+      const code = codeBox.textContent.trim();
+      const url  = new URL(window.location.href);
+      url.searchParams.set("code", code && code!=="No code found" ? code : "");
+      // keep amount in the shared link if present
+      if (incomingAmt) url.searchParams.set("amount", incomingAmt);
+      const shareData = { title:"Redeem Code", text:"Here’s your Google Play code:", url:url.toString() };
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else {
+          await navigator.clipboard.writeText(url.toString());
+          showToast("Link copied");
+        }
+      } catch(e){ /* user canceled */ }
+    });
+
+    // keyboard copy (Ctrl/Cmd+C) when code box focused
+    codeBox.tabIndex = 0;
+    codeBox.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
+        const text = codeBox.textContent.trim();
+        if (text && text !== "No code found") copyText(text);
+      }
+    });
+  </script>
+</body>
+</html>
